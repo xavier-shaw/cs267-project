@@ -1,5 +1,13 @@
 import React from 'react';
 import { usePrompt } from '../contexts/PromptContext';
+import { 
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Alert,
+  Box
+} from '@mui/material';
 
 const PromptEditor = () => {
   const { prompt, setPrompt, processPrompt, loading, error } = usePrompt();
@@ -12,34 +20,36 @@ const PromptEditor = () => {
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-xl font-bold mb-4">What image would you like to create?</h2>
-      <form onSubmit={handleSubmit}>
-        <textarea
+    <Paper elevation={3} sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>
+        What image would you like to create?
+      </Typography>
+      <Box component="form" onSubmit={handleSubmit}>
+        <TextField
+          fullWidth
+          multiline
+          rows={4}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          className="w-full p-2 border rounded-md mb-4 min-h-[100px]"
           placeholder="Describe the image you want to create..."
           disabled={loading}
+          sx={{ mb: 2 }}
         />
-        <button
+        <Button
           type="submit"
+          variant="contained"
           disabled={loading || !prompt.trim()}
-          className={`px-4 py-2 rounded-md ${
-            loading || !prompt.trim()
-              ? 'bg-gray-300 cursor-not-allowed'
-              : 'bg-blue-500 hover:bg-blue-600 text-white'
-          }`}
+          sx={{ minWidth: 120 }}
         >
           {loading ? 'Processing...' : 'Generate'}
-        </button>
-      </form>
+        </Button>
+      </Box>
       {error && (
-        <div className="mt-4 p-2 bg-red-100 text-red-700 rounded">
+        <Alert severity="error" sx={{ mt: 2 }}>
           {error}
-        </div>
+        </Alert>
       )}
-    </div>
+    </Paper>
   );
 };
 

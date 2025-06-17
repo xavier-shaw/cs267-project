@@ -29,18 +29,20 @@ object_category_mappings = {
 
 GENERAL_CATEGORIES = list(object_category_mappings.keys())
 
+
 def get_obj_category(obj_name: str) -> Optional[str]:
     for category, synonyms in object_category_mappings.items():
         if obj_name in synonyms:
             return category
     return None
 
+
 def reformat_scene_graph(scene_graph: Dict) -> Dict:
     new_scene_graph = {
         "entities": {},
         "relationships": []
     }
-    
+
     for idx, entity in enumerate(scene_graph['entities']):
         formatted_entity = {
             'id': idx,
@@ -51,9 +53,9 @@ def reformat_scene_graph(scene_graph: Dict) -> Dict:
         for modifier in entity['modifiers']:
             if modifier['dep'] == 'amod':
                 formatted_entity['attributes'].append(modifier['span'])
-                
+
         new_scene_graph['entities'][idx] = formatted_entity
-        
+
     for relationship in scene_graph['relations']:
         formatted_relationship = {
             'name': relationship['relation'],
@@ -61,12 +63,15 @@ def reformat_scene_graph(scene_graph: Dict) -> Dict:
             'subject': new_scene_graph['entities'][relationship['subject']]['name']
         }
         new_scene_graph['relationships'].append(formatted_relationship)
-        
+
     return new_scene_graph
 
 # FastAPI Models
+
+
 class Prompt(BaseModel):
     text: str
+
 
 class Entity(BaseModel):
     id: int
@@ -74,25 +79,17 @@ class Entity(BaseModel):
     category: Optional[str]
     attributes: List[str]
 
+
 class Relationship(BaseModel):
     name: str
     object: str
     subject: str
 
+
 class SceneGraph(BaseModel):
     entities: Dict[int, Entity]
     relationships: List[Relationship]
 
-@app.post("/parse", response_model=SceneGraph)
-async def parse_text(input_data: Prompt):
-    try:
-        scene_graph = sng_parser.parse(input_data.text)
-        sng_parser.tprint(scene_graph)
-        formatted_graph = reformat_scene_graph(scene_graph)
-        
-        return formatted_graph
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
 async def root():
@@ -101,6 +98,19 @@ async def root():
         "version": "1.0.0",
         "description": "API for parsing natural language descriptions into scene graphs"
     }
-    
+
+
+@app.post("/parse-prompt", response_model=SceneGraph)
+async def parse_text(input_data: Prompt):
+    try:
+        scene_graph = sng_parser.parse(input_data.text)
+        sng_parser.tprint(scene_graph)
+        formatted_graph = reformat_scene_graph(scene_graph)
+
+        return formatted_graph
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

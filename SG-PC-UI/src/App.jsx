@@ -1,11 +1,33 @@
-import { useState } from 'react'
+import { CssBaseline, ThemeProvider, createTheme } from '@mui/material'
 import './App.css'
 import Workspace from './Workspace'
 
-function App() {
+const theme = createTheme({
+  palette: {
+    background: {
+      default: '#f5f5f5'
+    }
+  },
+  components: {
+    MuiPaper: {
+      defaultProps: {
+        elevation: 0
+      },
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none'
+        }
+      }
+    }
+  }
+});
 
+function App() {
   return (
-     <Workspace />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Workspace />
+    </ThemeProvider>
   )
 }
 

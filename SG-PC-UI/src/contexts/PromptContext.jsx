@@ -6,7 +6,7 @@ const PromptContext = createContext();
 export const PromptProvider = ({ children }) => {
   const [prompt, setPrompt] = useState('');
   const [sceneGraph, setSceneGraph] = useState(null);
-  const [pcEvidence, setPcEvidence] = useState(null);
+  const [pcData, setPcData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -15,16 +15,16 @@ export const PromptProvider = ({ children }) => {
     setError(null);
     try {
       // Call scene graph parser API
-      const sgResponse = await axios.post(`${window.BACKEND_SG_URL}/parse`, { text });
+      const sgResponse = await axios.post(`${window.BACKEND_SG_URL}/parse-prompt`, { text });
       const sgData = sgResponse.data;
-      console.log(sgData);
+      console.log("scene graph: ", sgData);
       setSceneGraph(sgData);
 
       // Call PC API with scene graph
-      const pcResponse = await axios.post(`${window.BACKEND_PC_URL}/scene-graph`, sgData);
-      console.log(pcResponse);
+      const pcResponse = await axios.post(`${window.BACKEND_PC_URL}/parse-scene-graph`, sgData);
       const pcData = pcResponse.data;
-      setPcEvidence(pcData.evidences);
+      console.log("parse result: ", pcData);
+      setPcData(pcData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -36,7 +36,7 @@ export const PromptProvider = ({ children }) => {
     prompt,
     setPrompt,
     sceneGraph,
-    pcEvidence,
+    pcData,
     loading,
     error,
     processPrompt,

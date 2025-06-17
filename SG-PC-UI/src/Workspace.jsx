@@ -2,22 +2,21 @@ import React from 'react';
 import { PromptProvider } from './contexts/PromptContext';
 import PromptEditor from './components/PromptEditor';
 import GraphViewer from './components/GraphViewer';
+import { Container, Grid } from '@mui/material';
 
 const Workspace = () => {
   return (
     <PromptProvider>
-      <div className="min-h-screen bg-gray-100 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <PromptEditor />
-            </div>
-            <div>
-              <GraphViewer />
-            </div>
-          </div>
-        </div>
-      </div>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={5}>
+            <PromptEditor />
+          </Grid>
+          <Grid item xs={12} md={7}>
+            <GraphViewer />
+          </Grid>
+        </Grid>
+      </Container>
     </PromptProvider>
   );
 };

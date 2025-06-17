@@ -1,10 +1,10 @@
-datasets/
-
-*.pkl
-
 __pycache__/
 
 SG-PC-UI/node_modules/
 SG-PC-UI/package-lock.json
 
+datasets/
+
 *.ipynb
+*.pkl
+*.json

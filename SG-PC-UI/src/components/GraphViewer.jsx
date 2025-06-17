@@ -1,65 +1,162 @@
 import React from 'react';
 import { usePrompt } from '../contexts/PromptContext';
+import {
+  Paper,
+  Typography,
+  Box,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Grid,
+  Card,
+  CardContent,
+  Chip,
+  Stack
+} from '@mui/material';
 
 const GraphViewer = () => {
-  const { sceneGraph, pcEvidence } = usePrompt();
+  const { sceneGraph, pcData } = usePrompt();
 
   const renderSceneGraph = () => {
     if (!sceneGraph) return null;
 
     return (
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-2">Scene Graph</h3>
-        <div className="bg-gray-50 p-4 rounded-md">
-          <h4 className="font-medium mb-2">Entities:</h4>
-          <ul className="list-disc pl-5 mb-4">
-            {Object.values(sceneGraph.entities).map((entity) => (
-              <li key={entity.id}>
-                {entity.name} ({entity.category})
-                {entity.attributes.length > 0 && ` - ${entity.attributes.join(', ')}`}
-              </li>
-            ))}
-          </ul>
-          <h4 className="font-medium mb-2">Relationships:</h4>
-          <ul className="list-disc pl-5">
-            {sceneGraph.relationships.map((rel, idx) => (
-              <li key={idx}>
-                {rel.subject} {rel.name} {rel.object}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      <Box mb={3}>
+        <Typography variant="h6" gutterBottom>
+          Scene Graph
+        </Typography>
+        <Card>
+          <CardContent>
+            <Typography variant="subtitle1" gutterBottom>
+              Entities:
+            </Typography>
+            <List dense>
+              {Object.values(sceneGraph.entities).map((entity) => (
+                <ListItem key={entity.id}>
+                  <ListItemText
+                    primary={`${entity.name} (${entity.category})`}
+                    secondary={entity.attributes.length > 0 ? entity.attributes.join(', ') : null}
+                  />
+                </ListItem>
+              ))}
+            </List>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="subtitle1" gutterBottom>
+              Relationships:
+            </Typography>
+            <List dense>
+              {sceneGraph.relationships.map((rel, idx) => (
+                <ListItem key={idx}>
+                  <ListItemText
+                    primary={`${rel.subject} ${rel.name} ${rel.object}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </CardContent>
+        </Card>
+      </Box>
     );
   };
 
-  const renderEvidence = () => {
-    if (!pcEvidence) return null;
+  const renderProbabilisticResults = () => {
+    if (!pcData) return null;
 
     return (
-      <div>
-        <h3 className="text-lg font-semibold mb-2">PC Evidence</h3>
-        <div className="bg-gray-50 p-4 rounded-md">
-          <ul className="list-disc pl-5">
-            {pcEvidence.map((evidence, idx) => (
-              <li key={idx}>{evidence}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      <Grid container spacing={3}>
+        {/* Attributes Section */}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Predicted Attributes
+              </Typography>
+              {Object.entries(pcData.attr_probs).map(([object, probs]) => (
+                <Box key={object} mb={2}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {object}:
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    {probs.map(([attr, prob], idx) => (
+                      <Chip
+                        key={idx}
+                        label={`${attr} (${(prob * 100).toFixed(1)}%)`}
+                        size="small"
+                        sx={{ mb: 1 }}
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              ))}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Relationships Section */}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Predicted Relationships
+              </Typography>
+              {Object.entries(pcData.relation_probs).map(([objects, probs]) => (
+                <Box key={objects} mb={2}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {objects.replace('_', ' → ')}:
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    {probs.map(([rel, prob], idx) => (
+                      <Chip
+                        key={idx}
+                        label={`${rel} (${(prob * 100).toFixed(1)}%)`}
+                        size="small"
+                        sx={{ mb: 1 }}
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              ))}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Co-occurrence Section */}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Predicted Co-occurrences
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {pcData.co_occur_probs.map(([obj, prob], idx) => (
+                  <Chip
+                    key={idx}
+                    label={`${obj} (${(prob * 100).toFixed(1)}%)`}
+                    size="small"
+                    sx={{ mb: 1 }}
+                  />
+                ))}
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     );
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
+    <Paper elevation={3} sx={{ p: 3 }}>
       {renderSceneGraph()}
-      {renderEvidence()}
-      {!sceneGraph && !pcEvidence && (
-        <div className="text-gray-500 text-center py-8">
-          Enter a prompt to generate scene graph and evidence
-        </div>
+      {renderProbabilisticResults()}
+      {!sceneGraph && !pcData && (
+        <Box textAlign="center" py={4}>
+          <Typography color="text.secondary">
+            Enter a prompt to generate scene graph and predictions
+          </Typography>
+        </Box>
       )}
-    </div>
+    </Paper>
   );
 };
 
