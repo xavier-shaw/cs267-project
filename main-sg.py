@@ -126,14 +126,14 @@ async def root():
 
 @app.post("/parse-prompt", response_model=SceneGraph)
 async def parse_text(input_data: Prompt):
-    try:
-        scene_graph = sng_parser.parse(input_data.text)
-        sng_parser.tprint(scene_graph)
-        formatted_graph = reformat_scene_graph(scene_graph)
+    # try:
+    scene_graph = sng_parser.parse(input_data.text)
+    sng_parser.tprint(scene_graph)
+    formatted_graph = reformat_scene_graph(scene_graph)
 
-        return formatted_graph
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return formatted_graph
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/prompt-to-image")

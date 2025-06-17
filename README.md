@@ -12,9 +12,10 @@ Our system consists of three modules:
 ### Scene Graph Processor
 
 ```
-conda env create -n cs267-sg python=3.10
+conda create -n cs267-sg python=3.10
 conda activate cs267-sg
 pip install requirements-sg.txt
+python -m spacy download en
 python -m main-sg
 ```
 
@@ -23,9 +24,10 @@ The scene graph processor will be running at port `8000`.
 ### Probabilistic Circuits
 
 ```
-conda env create -n cs267-pc python=3.8
+conda create -n cs267-pc python=3.8
 conda activate cs267-pc
 pip install requirements-pc.txt
+pip install https://github.com/SPFlow/SPFlow/archive/refs/heads/master.zip
 python -m main-pc
 ```
 
