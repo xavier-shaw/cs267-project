@@ -46,7 +46,7 @@ RELATIONSHIPS = {"to the left of", "to the right of", "in front of",
 
 ATTRIBUTES = [
     "tall", "short", "large", "small", "big", "little",
-    "white", "brown", "black", "blue", "brown", "gray", "blonde", "red",
+    "white", "black", "blue", "brown", "gray", "blonde", "red",
     "walking", "running", "jumping", "sitting", "standing", "lying", "sleeping", "flying",
 ]
 
@@ -74,10 +74,14 @@ def scene_graph_to_evidence(scene_graph: SceneGraph):
 
     for entity in scene_graph.entities.values():
         evidence = f'has_{entity.name}'
+        if evidence not in feature_names:
+            continue
         evidences.append(evidence)
 
     for relationship in scene_graph.relationships:
         evidence = f'{relationship.object}_{relationship.name}_{relationship.subject}'
+        if evidence not in feature_names:
+            continue
         evidences.append(evidence)
 
     return evidences
@@ -100,7 +104,7 @@ async def root():
 async def process_scene_graph(scene_graph: SceneGraph):
     """Process a scene graph and return the evidence list"""
     try:
-        entities = list(scene_graph.entities.values())
+        entities = [entity for entity in list(scene_graph.entities.values()) if entity.name in OBJECTS]
         # parse scene graph to evidences
         evidences = scene_graph_to_evidence(scene_graph)
         # query the probability of an object co-occurring with another object
@@ -119,8 +123,10 @@ async def process_scene_graph(scene_graph: SceneGraph):
                 relation_probs_1 = query_relationship(entity_1.name, entity_2.name)
                 relation_probs_2 = query_relationship(entity_2.name, entity_1.name)
                 
-                relation_probs_dict[f"{entity_1.name}_{entity_2.name}"] = relation_probs_1
-                relation_probs_dict[f"{entity_2.name}_{entity_1.name}"] = relation_probs_2
+                if len(relation_probs_1) > 0:
+                    relation_probs_dict[f"{entity_1.name}_{entity_2.name}"] = relation_probs_1
+                if len(relation_probs_2) > 0:
+                    relation_probs_dict[f"{entity_2.name}_{entity_1.name}"] = relation_probs_2
             
         # return the results
         return {

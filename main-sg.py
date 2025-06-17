@@ -5,6 +5,9 @@ from pprint import pprint
 from typing import Dict, List, Optional
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
+from diffusers import DiffusionPipeline
+from fastapi.responses import Response
+from io import BytesIO
 
 app = FastAPI()
 app.add_middleware(
@@ -14,6 +17,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+pipe = DiffusionPipeline.from_pretrained("stable-diffusion-v1-5/stable-diffusion-v1-5")
+pipe = pipe.to("mps")
+
+# Recommended if your computer has < 64 GB of RAM
+pipe.enable_attention_slicing()
+
 
 object_category_mappings = {
     'person': ['man', 'woman', 'people', 'boy', 'girl', 'person'],
@@ -27,8 +38,17 @@ object_category_mappings = {
     'food': ['food', 'pizza', 'banana', 'broccoli', 'orange', 'fruit', 'cheese', 'donut']
 }
 
-GENERAL_CATEGORIES = list(object_category_mappings.keys())
+OBJECTS = [item for sublist in object_category_mappings.values()
+           for item in sublist]
 
+RELATIONSHIPS = {"to the left of", "to the right of", "in front of",
+                 "behind", "on", "in", "above", "below", "next to", "under"}
+
+ATTRIBUTES = [
+    "tall", "short", "large", "small", "big", "little",
+    "white", "black", "blue", "brown", "gray", "blonde", "red",
+    "walking", "running", "jumping", "sitting", "standing", "lying", "sleeping", "flying",
+]
 
 def get_obj_category(obj_name: str) -> Optional[str]:
     for category, synonyms in object_category_mappings.items():
@@ -44,6 +64,9 @@ def reformat_scene_graph(scene_graph: Dict) -> Dict:
     }
 
     for idx, entity in enumerate(scene_graph['entities']):
+        if entity['head'] not in OBJECTS:
+            continue
+        
         formatted_entity = {
             'id': idx,
             'name': entity['head'],
@@ -51,12 +74,15 @@ def reformat_scene_graph(scene_graph: Dict) -> Dict:
             'attributes': []
         }
         for modifier in entity['modifiers']:
-            if modifier['dep'] == 'amod':
+            if modifier['dep'] == 'amod' and modifier['span'] in ATTRIBUTES:
                 formatted_entity['attributes'].append(modifier['span'])
 
         new_scene_graph['entities'][idx] = formatted_entity
 
     for relationship in scene_graph['relations']:
+        if relationship['relation'] not in RELATIONSHIPS:
+            continue
+        
         formatted_relationship = {
             'name': relationship['relation'],
             'object': new_scene_graph['entities'][relationship['object']]['name'],
@@ -65,8 +91,6 @@ def reformat_scene_graph(scene_graph: Dict) -> Dict:
         new_scene_graph['relationships'].append(formatted_relationship)
 
     return new_scene_graph
-
-# FastAPI Models
 
 
 class Prompt(BaseModel):
@@ -108,6 +132,20 @@ async def parse_text(input_data: Prompt):
         formatted_graph = reformat_scene_graph(scene_graph)
 
         return formatted_graph
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/prompt-to-image")
+async def prompt_to_image(input_data: Prompt):
+    try:
+        image = pipe(input_data.text).images[0]
+        # Convert PIL Image to bytes
+        img_byte_arr = BytesIO()
+        image.save(img_byte_arr, format='PNG')
+        img_byte_arr = img_byte_arr.getvalue()
+        
+        return Response(content=img_byte_arr, media_type="image/png")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

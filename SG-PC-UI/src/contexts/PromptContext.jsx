@@ -9,6 +9,8 @@ export const PromptProvider = ({ children }) => {
   const [pcData, setPcData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState(null);
 
   const processPrompt = async (text) => {
     setLoading(true);
@@ -29,7 +31,26 @@ export const PromptProvider = ({ children }) => {
       setError(err.message);
     } finally {
       setLoading(false);
+      promptToImage(text);
     }
+  };
+
+  const promptToImage = async (text) => {
+    setImageLoading(true);
+    axios.post(`${window.BACKEND_SG_URL}/prompt-to-image`,
+      { text },
+      { responseType: 'blob' }
+    )
+      .then(response => {
+        const imageUrl = URL.createObjectURL(response.data);
+        setImageUrl(imageUrl);
+      })
+      .catch(err => {
+        setError(err.message);
+      })
+      .finally(() => {
+        setImageLoading(false);
+      });
   };
 
   const value = {
@@ -40,6 +61,9 @@ export const PromptProvider = ({ children }) => {
     loading,
     error,
     processPrompt,
+    imageUrl,
+    imageLoading,
+    promptToImage,
   };
 
   return (
